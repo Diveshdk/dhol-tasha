@@ -80,7 +80,17 @@ export default function UsagePage() {
       return;
     }
 
+    // Validate quantities
+    for (const [itemName, usedQuantity] of Object.entries(formData.selectedItems)) {
+      const item = items.find(i => i.name === itemName && i.category === 'godown');
+      if (item && usedQuantity > item.quantity) {
+        setError(`Insufficient quantity for ${itemName}. Available: ${item.quantity}, Requested: ${usedQuantity}`);
+        return;
+      }
+    }
+
     try {
+      // First, create the usage log
       const { error: insertError } = await supabase.from('usage_logs').insert({
         date: formData.date,
         name: formData.name,
@@ -88,6 +98,24 @@ export default function UsagePage() {
       });
 
       if (insertError) throw insertError;
+
+      // Then, deduct quantities from godown inventory
+      for (const [itemName, usedQuantity] of Object.entries(formData.selectedItems)) {
+        // Find the item in the inventory
+        const item = items.find(i => i.name === itemName && i.category === 'godown');
+        
+        if (item) {
+          const newQuantity = Math.max(0, item.quantity - usedQuantity);
+          
+          // Update the inventory quantity
+          const { error: updateError } = await supabase
+            .from('inventory_items')
+            .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+            .eq('id', item.id);
+
+          if (updateError) throw updateError;
+        }
+      }
 
       setFormData({
         date: new Date().toISOString().split('T')[0],
@@ -103,6 +131,29 @@ export default function UsagePage() {
 
   const deleteLog = async (id: string) => {
     try {
+      // First, get the log to restore quantities
+      const logToDelete = logs.find(log => log.id === id);
+      
+      if (logToDelete) {
+        // Restore quantities back to godown inventory
+        for (const [itemName, usedQuantity] of Object.entries(logToDelete.items)) {
+          const item = items.find(i => i.name === itemName && i.category === 'godown');
+          
+          if (item) {
+            const newQuantity = item.quantity + usedQuantity;
+            
+            // Update the inventory quantity
+            const { error: updateError } = await supabase
+              .from('inventory_items')
+              .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+              .eq('id', item.id);
+
+            if (updateError) throw updateError;
+          }
+        }
+      }
+
+      // Then delete the log
       const { error: deleteError } = await supabase
         .from('usage_logs')
         .delete()
@@ -230,17 +281,23 @@ export default function UsagePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-3">Items Used</label>
+                <label className="block text-sm font-medium text-foreground mb-3">Items Used (from Godown)</label>
                 <div className="grid gap-3 max-h-96 overflow-y-auto">
-                  {items.map(item => (
+                  {items.filter(item => item.category === 'godown').map(item => (
                     <div key={item.id} className="flex items-center gap-3 rounded-lg border border-border bg-secondary p-3">
                       <input
                         type="checkbox"
                         checked={!!formData.selectedItems[item.name]}
                         onChange={() => toggleItem(item.name)}
+                        disabled={item.quantity === 0}
                         className="h-4 w-4 rounded border-border"
                       />
-                      <span className="flex-1 text-sm text-foreground">{item.name}</span>
+                      <span className="flex-1 text-sm text-foreground">
+                        {item.name} 
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (Available: {item.quantity})
+                        </span>
+                      </span>
                       {formData.selectedItems[item.name] && (
                         <div className="flex items-center gap-2">
                           <button
@@ -256,7 +313,8 @@ export default function UsagePage() {
                           <button
                             type="button"
                             onClick={() => updateItemQuantity(item.name, 1)}
-                            className="flex h-6 w-6 items-center justify-center rounded bg-background text-foreground hover:bg-background/80"
+                            disabled={formData.selectedItems[item.name] >= item.quantity}
+                            className="flex h-6 w-6 items-center justify-center rounded bg-background text-foreground hover:bg-background/80 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             +
                           </button>
