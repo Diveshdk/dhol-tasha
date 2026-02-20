@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Minus, RefreshCw, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, RefreshCw, CheckCircle, Lock, Unlock } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useAdmin } from '@/hooks/use-admin';
+import { AdminPasswordDialog } from '@/components/admin-password-dialog';
 
 interface InventoryItem {
   id: string;
@@ -19,6 +21,7 @@ export default function ReadyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const { isAdmin, showPasswordDialog, setShowPasswordDialog, checkPassword, logout } = useAdmin();
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -81,6 +84,12 @@ export default function ReadyPage() {
 
   return (
     <main className="min-h-screen bg-background">
+      <AdminPasswordDialog
+        isOpen={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+        onSubmit={checkPassword}
+      />
+      
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -92,7 +101,26 @@ export default function ReadyPage() {
               <h1 className="text-3xl font-bold text-foreground">Ready to Use</h1>
               <p className="mt-1 text-sm text-muted-foreground">Items available for immediate use</p>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-3">
+              {isAdmin ? (
+                <>
+                  <span className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Unlock className="h-4 w-4 text-green-500" />
+                    Admin Mode
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="rounded-lg border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary"
+                  >
+                    Lock
+                  </button>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  View Only (Ctrl+T for admin)
+                </span>
+              )}
               <CheckCircle className="h-8 w-8 text-primary" />
             </div>
           </div>
@@ -149,8 +177,8 @@ export default function ReadyPage() {
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => updateQuantity(item.id, -1)}
-                          disabled={updating === item.id || item.quantity === 0}
-                          className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+                          disabled={!isAdmin || updating === item.id || item.quantity === 0}
+                          className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Minus className="h-5 w-5 text-foreground" />
                         </button>
@@ -159,8 +187,8 @@ export default function ReadyPage() {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.id, 1)}
-                          disabled={updating === item.id}
-                          className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 disabled:opacity-50"
+                          disabled={!isAdmin || updating === item.id}
+                          className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Plus className="h-5 w-5 text-foreground" />
                         </button>

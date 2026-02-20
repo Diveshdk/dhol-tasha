@@ -11,7 +11,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Dhol Tasha Inventory</h1>
+              <h1 className="text-3xl font-bold text-foreground">Aadyatal dhwajpathak sanstha inventory</h1>
               <p className="mt-1 text-sm text-muted-foreground">Professional inventory management system</p>
             </div>
             <div className="text-4xl">🥁</div>

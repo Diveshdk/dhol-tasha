@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Minus, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, RefreshCw, Lock, Unlock } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useAdmin } from '@/hooks/use-admin';
+import { AdminPasswordDialog } from '@/components/admin-password-dialog';
 
 interface InventoryItem {
   id: string;
@@ -19,6 +21,7 @@ export default function GodownPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const { isAdmin, showPasswordDialog, setShowPasswordDialog, checkPassword, logout } = useAdmin();
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -75,6 +78,12 @@ export default function GodownPage() {
 
   return (
     <main className="min-h-screen bg-background">
+      <AdminPasswordDialog
+        isOpen={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+        onSubmit={checkPassword}
+      />
+      
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -85,6 +94,27 @@ export default function GodownPage() {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Godown Stock</h1>
               <p className="mt-1 text-sm text-muted-foreground">Manage storage inventory</p>
+            </div>
+            <div className="ml-auto flex items-center gap-3">
+              {isAdmin ? (
+                <>
+                  <span className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Unlock className="h-4 w-4 text-green-500" />
+                    Admin Mode
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="rounded-lg border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary"
+                  >
+                    Lock
+                  </button>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  View Only (Ctrl+T for admin)
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -133,8 +163,8 @@ export default function GodownPage() {
                     <div className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2">
                       <button
                         onClick={() => updateQuantity(item.id, -1)}
-                        disabled={updating === item.id || item.quantity === 0}
-                        className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary/10 disabled:opacity-50"
+                        disabled={!isAdmin || updating === item.id || item.quantity === 0}
+                        className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Minus className="h-4 w-4 text-foreground" />
                       </button>
@@ -143,8 +173,8 @@ export default function GodownPage() {
                       </span>
                       <button
                         onClick={() => updateQuantity(item.id, 1)}
-                        disabled={updating === item.id}
-                        className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary/10 disabled:opacity-50"
+                        disabled={!isAdmin || updating === item.id}
+                        className="flex h-8 w-8 items-center justify-center rounded hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Plus className="h-4 w-4 text-foreground" />
                       </button>
