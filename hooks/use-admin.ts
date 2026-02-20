@@ -8,8 +8,8 @@ export function useAdmin() {
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Check for Ctrl+T (or Cmd+T on Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+      // Check for Ctrl+D (or Cmd+D on Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
         setShowPasswordDialog(true);
       }

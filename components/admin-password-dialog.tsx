@@ -90,10 +90,6 @@ export function AdminPasswordDialog({ isOpen, onClose, onSubmit }: AdminPassword
             </button>
           </div>
         </form>
-
-        <p className="mt-4 text-xs text-muted-foreground text-center">
-          Press <kbd className="rounded bg-secondary px-2 py-1 text-xs">Ctrl+T</kbd> to access admin mode
-        </p>
       </div>
     </div>
   );

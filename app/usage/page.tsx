@@ -175,7 +175,7 @@ export default function UsagePage() {
               ) : (
                 <span className="text-xs text-muted-foreground flex items-center gap-2">
                   <Lock className="h-4 w-4" />
-                  View Only (Ctrl+T for admin)
+                  View Only
                 </span>
               )}
               <BarChart3 className="h-8 w-8 text-primary" />
