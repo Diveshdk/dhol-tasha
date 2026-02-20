@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, RefreshCw, BarChart3, Lock, Unlock } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, RefreshCw, BarChart3 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { useAdmin } from '@/hooks/use-admin';
-import { AdminPasswordDialog } from '@/components/admin-password-dialog';
 
 interface UsageLog {
   id: string;
@@ -33,7 +31,6 @@ export default function UsagePage() {
     name: '',
     selectedItems: {} as Record<string, number>,
   });
-  const { isAdmin, showPasswordDialog, setShowPasswordDialog, checkPassword, logout } = useAdmin();
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -192,12 +189,6 @@ export default function UsagePage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <AdminPasswordDialog
-        isOpen={showPasswordDialog}
-        onClose={() => setShowPasswordDialog(false)}
-        onSubmit={checkPassword}
-      />
-      
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -209,26 +200,7 @@ export default function UsagePage() {
               <h1 className="text-3xl font-bold text-foreground">Usage Tracking</h1>
               <p className="mt-1 text-sm text-muted-foreground">Log items used for events</p>
             </div>
-            <div className="ml-auto flex items-center gap-3">
-              {isAdmin ? (
-                <>
-                  <span className="text-xs text-muted-foreground flex items-center gap-2">
-                    <Unlock className="h-4 w-4 text-green-500" />
-                    Admin Mode
-                  </span>
-                  <button
-                    onClick={logout}
-                    className="rounded-lg border border-border px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary"
-                  >
-                    Lock
-                  </button>
-                </>
-              ) : (
-                <span className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
-                  View Only
-                </span>
-              )}
+            <div className="ml-auto">
               <BarChart3 className="h-8 w-8 text-primary" />
             </div>
           </div>
@@ -246,8 +218,7 @@ export default function UsagePage() {
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            disabled={!isAdmin}
-            className="mb-6 flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mb-6 flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
             New Usage Log
@@ -385,8 +356,7 @@ export default function UsagePage() {
                   </div>
                   <button
                     onClick={() => deleteLog(log.id)}
-                    disabled={!isAdmin}
-                    className="ml-4 flex items-center justify-center rounded-lg hover:bg-destructive/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ml-4 flex items-center justify-center rounded-lg hover:bg-destructive/10"
                   >
                     <Trash2 className="h-5 w-5 text-destructive" />
                   </button>
